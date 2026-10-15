@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aura Boy vs. Umar Sami: Ultimate Chase</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Outfit:wght@400;700;900&display=swap');
+        
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #050508;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .font-black-ops {
+            font-family: 'Black Ops One', cursive;
+        }
+
+        .gold-glow-text {
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 35px rgba(255, 165, 0, 0.6);
+        }
+
+        .gold-gradient {
+            background: linear-gradient(135deg, #FFF099 0%, #FFD700 50%, #B8860B 100%);
+        }
+
+        .gold-button {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+            border: 2px solid #FFF;
+        }
+
+        .gold-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 35px rgba(255, 215, 0, 0.9), inset 0 2px 4px rgba(255, 255, 255, 1);
+        }
+
+        .gold-button:active {
+            transform: scale(0.98);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Lightning Screen Flash Animations */
+        @keyframes flash-gold {
+            0% { background-color: rgba(255, 215, 0, 0.5); }
+            100% { background-color: transparent; }
+        }
+
+        .flash-active {
+            animation: flash-gold 0.35s ease-out forwards;
+        }
+
+        /* Beat Drop Chant Banner Animation */
+        @keyframes banner-pop {
+            0% { transform: translate(-50%, -50%) scale(0.2) rotate(-8deg); opacity: 0; }
+            40% { transform: translate(-50%, -50%) scale(1.15) rotate(2deg); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1.0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.85) rotate(0deg); opacity: 0; }
+        }
+
+        .chant-banner-anim {
+            animation: banner-pop 1.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="bg-black select-none overflow-hidden">
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay Layer -->
+    <div class="ui-layer flex flex-col justify-between p-4 md:p-6">
+        
+        <!-- HUD Panel -->
+        <div id="hud-panel" class="hidden flex justify-between items-start w-full max-w-4xl mx-auto">
+            <div class="flex gap-3 md:gap-4 items-center">
+                <!-- Score Display -->
+                <div class="bg-black/80 backdrop-blur-md border border-yellow-500/60 px-4 py-2 md:px-5 md:py-2.5 rounded-2xl flex items-center gap-3 shadow-lg">
+                    <i class="fa-solid fa-trophy text-yellow-400 text-lg md:text-xl"></i>
+                    <div>
+                        <div class="text-[10px] md:text-xs text-yellow-500 uppercase font-bold tracking-wider">Aura Score</div>
+                        <div id="score-text" class="text-xl md:text-2xl font-black-ops text-white tracking-widest">00000</div>
+                    </div>
+                </div>
+
+                <!-- Coins Display -->
+                <div class="bg-black/80 backdrop-blur-md border border-yellow-500/60 px-4 py-2 md:px-5 md:py-2.5 rounded-2xl flex items-center gap-3 shadow-lg">
+                    <i class="fa-solid fa-coins text-yellow-400 text-lg md:text-xl"></i>
+                    <div>
+                        <div class="text-[10px] md:text-xs text-yellow-500 uppercase font-bold tracking-wider">Gold Coins</div>
+                        <div id="coins-text" class="text-xl md:text-2xl font-black-ops text-yellow-400 tracking-widest">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Power-up Badge -->
+            <div id="powerup-badge" class="hidden bg-black/90 backdrop-blur-md border-2 border-yellow-400 px-4 py-2 rounded-2xl flex items-center gap-3 shadow-2xl animate-pulse">
+                <i id="powerup-icon" class="fa-solid fa-bolt text-yellow-400 text-2xl"></i>
+                <div>
+                    <div id="powerup-name" class="text-xs font-bold text-yellow-400 uppercase">JETPACK</div>
+                    <div id="powerup-timer" class="text-lg font-black-ops text-white">5s</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating 5-Second Beat Drop Neon Banner -->
+        <div id="chant-banner" class="hidden fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none z-50">
+            <div class="bg-gradient-to-r from-yellow-500 via-amber-300 to-yellow-600 border-4 border-black px-6 py-3 md:px-10 md:py-5 rounded-3xl shadow-[0_0_60px_rgba(255,215,0,0.9)] transform rotate-[-2deg]">
+                <h1 class="text-3xl md:text-6xl font-black-ops text-black tracking-wider uppercase drop-shadow flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-bolt text-black"></i> UMAR SAMIYOOOOL BEAT! <i class="fa-solid fa-bolt text-black"></i>
+                </h1>
+                <p class="text-xs md:text-sm font-extrabold text-black uppercase tracking-widest mt-1">
+                    ⚡ BASS DROP & SOUND POWER BOOST! ⚡
+                </p>
+            </div>
+        </div>
+
+        <!-- Touch Controls for Mobile -->
+        <div id="touch-controls" class="hidden interactive grid grid-cols-3 gap-2 w-full max-w-sm mx-auto mb-2 opacity-80 hover:opacity-100 transition-opacity">
+            <button id="btn-left" class="bg-yellow-500/20 active:bg-yellow-500/50 border border-yellow-500/50 text-yellow-400 font-bold p-4 rounded-2xl flex justify-center items-center text-2xl">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="grid grid-rows-2 gap-2">
+                <button id="btn-up" class="bg-yellow-500/20 active:bg-yellow-500/50 border border-yellow-500/50 text-yellow-400 font-bold p-2 rounded-2xl flex justify-center items-center text-xl">
+                    <i class="fa-solid fa-arrow-up"></i> JUMP
+                </button>
+                <button id="btn-down" class="bg-yellow-500/20 active:bg-yellow-500/50 border border-yellow-500/50 text-yellow-400 font-bold p-2 rounded-2xl flex justify-center items-center text-xl">
+                    <i class="fa-solid fa-arrow-down"></i> SLIDE
+                </button>
+            </div>
+            <button id="btn-right" class="bg-yellow-500/20 active:bg-yellow-500/50 border border-yellow-500/50 text-yellow-400 font-bold p-4 rounded-2xl flex justify-center items-center text-2xl">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen Flash Container -->
+    <div id="flash-overlay" class="fixed inset-0 pointer-events-none z-30"></div>
+
+    <!-- START MENU MODAL -->
+    <div id="start-screen" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-40 flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-neutral-900 border-2 border-yellow-500/60 rounded-3xl p-6 text-center shadow-[0_0_60px_rgba(255,215,0,0.25)] flex flex-col items-center">
+            
+            <!-- Funny Banner Illustration -->
+            <div class="relative mb-4 w-full h-48 rounded-2xl overflow-hidden border border-yellow-500/40 bg-black flex justify-center items-center">
+                <canvas id="poster-canvas" width="360" height="200" class="w-full h-full object-cover"></canvas>
+                <div class="absolute bottom-2 bg-black/90 px-3 py-1 rounded-full text-[11px] font-bold text-yellow-400 border border-yellow-500/50">
+                    🍔 TARGET: UMAR SAMI (BURGER CHASER)
+                </div>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-black-ops text-transparent bg-clip-text gold-gradient gold-glow-text mb-1">
+                AURA BOY vs. UMAR SAMI
+            </h1>
+            <p class="text-yellow-400/90 font-semibold text-xs tracking-widest uppercase mb-4">
+                GOLD & BLACK SUBWAY RUNNER
+            </p>
+
+            <div class="bg-neutral-950/90 rounded-2xl p-3.5 text-left w-full border border-neutral-800 text-xs text-neutral-300 mb-6 space-y-2">
+                <div class="flex items-center gap-2 text-yellow-400 font-bold">
+                    <i class="fa-solid fa-bolt"></i> <span>5-Sec Beat & Vocal Drop:</span>
+                </div>
+                <p class="pl-5 text-neutral-400">Plays synthesized heavy bass kick beat drop + speaks <span class="text-yellow-400 font-bold">'Umar samiyooool'</span> every 5 seconds!</p>
+                
+                <div class="flex items-center gap-2 text-yellow-400 font-bold">
+                    <i class="fa-solid fa-gamepad"></i> <span>Controls:</span>
+                </div>
+                <p class="pl-5 text-neutral-400">WASD / Arrow Keys / Space / On-screen Buttons & Swipes.</p>
+            </div>
+
+            <button id="start-btn" class="interactive gold-button text-black font-black-ops text-xl px-8 py-4 rounded-2xl w-full tracking-wider transition-transform flex items-center justify-center gap-3">
+                <i class="fa-solid fa-play text-2xl"></i> START RUN NOW!
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME OVER MODAL -->
+    <div id="gameover-screen" class="hidden fixed inset-0 bg-black/95 backdrop-blur-xl z-40 flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-neutral-900 border-2 border-red-500/80 rounded-3xl p-6 text-center shadow-[0_0_60px_rgba(255,0,0,0.35)] flex flex-col items-center">
+            
+            <div class="relative mb-4 w-full h-44 rounded-2xl overflow-hidden border border-red-500/40 bg-black flex justify-center items-center">
+                <canvas id="gameover-canvas" width="360" height="180" class="w-full h-full object-cover"></canvas>
+            </div>
+
+            <h2 class="text-3xl font-black-ops text-red-500 mb-1 drop-shadow">
+                CAUGHT BY UMAR SAMI!
+            </h2>
+            <p id="gameover-subtitle" class="text-yellow-400 text-sm font-bold mb-4 uppercase tracking-widest">
+                "OHH NO UMAR SAMI!"
+            </p>
+
+            <div class="grid grid-cols-2 gap-4 w-full mb-6">
+                <div class="bg-neutral-950 p-3 rounded-2xl border border-neutral-800">
+                    <div class="text-xs text-neutral-400 font-bold uppercase">Aura Score</div>
+                    <div id="final-score" class="text-2xl font-black-ops text-white">0</div>
+                </div>
+                <div class="bg-neutral-950 p-3 rounded-2xl border border-neutral-800">
+                    <div class="text-xs text-yellow-500 font-bold uppercase">Coins Gathered</div>
+                    <div id="final-coins" class="text-2xl font-black-ops text-yellow-400">0</div>
+                </div>
+            </div>
+
+            <button id="restart-btn" class="interactive gold-button text-black font-black-ops text-xl px-8 py-4 rounded-2xl w-full tracking-wider transition-transform flex items-center justify-center gap-3">
+                <i class="fa-solid fa-rotate-right text-2xl"></i> RESTART RUN!
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script>
+        /* --- AUDIO SYNTHESIZER & SPEECH ENGINE --- */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.synthVoice = window.speechSynthesis;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playBeatDrop() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+
+                // 1. Heavy Sub-Bass Kick
+                const kickOsc = this.ctx.createOscillator();
+                const kickGain = this.ctx.createGain();
+                kickOsc.type = 'triangle';
+                kickOsc.frequency.setValueAtTime(160, now);
+                kickOsc.frequency.exponentialRampToValueAtTime(30, now + 0.45);
+                
+                kickGain.gain.setValueAtTime(0.8, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+                kickOsc.connect(kickGain);
+                kickGain.connect(this.ctx.destination);
+                kickOsc.start(now);
+                kickOsc.stop(now + 0.45);
+
+                // 2. Pitched Melody Synth Pulse
+                const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+                    
+                    gain.gain.setValueAtTime(0.25, now + (idx * 0.08));
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.08) + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + (idx * 0.08));
+                    osc.stop(now + (idx * 0.08) + 0.15);
+                });
+            }
+
+            playCoin() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(987.77, now);
+                osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.1);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+
+            playJump() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(580, now + 0.18);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            }
+
+            playCrash() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(130, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.35);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+
+            speak(phrase, pitch = 1.0, rate = 1.1) {
+                if (!this.synthVoice) return;
+                try {
+                    this.synthVoice.cancel();
+                    const utter = new SpeechSynthesisUtterance(phrase);
+                    utter.pitch = pitch;
+                    utter.rate = rate;
+                    utter.volume = 1.0;
+                    this.synthVoice.speak(utter);
+                } catch(e) {
+                    console.log("Speech Error:", e);
+                }
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        /* --- HOME & GAMEOVER CANVASES --- */
+        function drawPosterCanvas() {
+            const canvas = document.getElementById('poster-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Gold Trim Frame
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
+
+            // Fatty Umar Sami Head
+            ctx.fillStyle = '#ffcc99';
+            ctx.beginPath();
+            ctx.arc(180, 105, 48, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sweat Drop
+            ctx.fillStyle = '#00ffff';
+            ctx.beginPath();
+            ctx.arc(222, 85, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Open Mouth
+            ctx.fillStyle = '#7a0000';
+            ctx.beginPath();
+            ctx.arc(180, 120, 22, 0, Math.PI);
+            ctx.fill();
+
+            // Burger
+            ctx.fillStyle = '#d88d28';
+            ctx.fillRect(150, 130, 60, 14);
+            ctx.fillStyle = '#542d0c';
+            ctx.fillRect(145, 144, 70, 10);
+            ctx.fillStyle = '#319e19';
+            ctx.fillRect(148, 154, 64, 6);
+
+            // Text
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '900 19px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("YOU SHOULD DIET UMAR SAMI!", 180, 36);
+        }
+
+        function drawGameOverCanvas() {
+            const canvas = document.getElementById('gameover-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#110303';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Passed out Umar Sami
+            ctx.fillStyle = '#ffcc99';
+            ctx.beginPath();
+            ctx.arc(120, 105, 38, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes (swirly)
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(110, 100, 7, 0, Math.PI * 2);
+            ctx.arc(130, 100, 7, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Stuffed Belly
+            ctx.fillStyle = '#cc2222';
+            ctx.beginPath();
+            ctx.ellipse(210, 115, 55, 40, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Text
+            ctx.fillStyle = '#FF4444';
+            ctx.font = '900 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("UMAR SAMI CAUGHT YOU!", 180, 35);
+        }
+
+        drawPosterCanvas();
+        drawGameOverCanvas();
+
+        /* --- THREE.JS ENDLESS RUNNER ENGINE --- */
+        let scene, camera, renderer;
+        let player, chaser;
+        let trackSegments = [];
+        let obstacles = [];
+        let coins = [];
+        let powerups = [];
+        let rainParticles;
+        let lightningLight;
+
+        // Gameplay State
+        let isPlaying = false;
+        let gameSpeed = 0.58;
+        let distanceRun = 0;
+        let score = 0;
+        let coinCount = 0;
+        let currentLane = 0;
+        const laneWidth = 3.5;
+
+        // Player Motion
+        let playerY = 0;
+        let playerVelocityY = 0;
+        let isJumping = false;
+        let isSliding = false;
+        let slideTimer = 0;
+        let auraShieldActive = false;
+        let magnetActive = false;
+        let jetpackActive = false;
+        let hoverboardActive = false;
+        let powerupTimer = 0;
+
+        // Chaser Distance
+        let chaserDistance = 8.0;
+        let targetChaserDistance = 8.0;
+
+        // 5-Second Beat Drop Loop
+        let beatTimer = 0;
+        const BEAT_INTERVAL = 5.0; // 5 Seconds
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050508);
+            scene.fog = new THREE.FogExp2(0x050508, 0.016);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+            camera.position.set(0, 5, 10);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Ambient & Directional Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffd700, 1.2);
+            dirLight.position.set(20, 40, 20);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Flash Lightning Light
+            lightningLight = new THREE.PointLight(0xffffff, 0, 150);
+            lightningLight.position.set(0, 25, -20);
+            scene.add(lightningLight);
+
+            // Build Entities
+            buildPlayerGroup();
+            buildChaserGroup();
+
+            // Track Segments
+            for (let i = 0; i < 10; i++) {
+                createTrackSegment(i * -30);
+            }
+
+            // Rain Particles
+            createRain();
+
+            // Window & Inputs
+            window.addEventListener('resize', onWindowResize);
+            setupControls();
+        }
+
+        /* --- ENTITY CREATION --- */
+        function buildPlayerGroup() {
+            player = new THREE.Group();
+
+            // Body
+            const bodyGeo = new THREE.CylinderGeometry(0.5, 0.3, 1.6, 16);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.9 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.0;
+            body.castShadow = true;
+            player.add(body);
+
+            // Glowing Gold Aura Chest
+            const chestGeo = new THREE.BoxGeometry(0.7, 0.6, 0.5);
+            const chestMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffa500, emissiveIntensity: 0.7 });
+            const chest = new THREE.Mesh(chestGeo, chestMat);
+            chest.position.set(0, 1.1, 0.1);
+            player.add(chest);
+
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.0;
+            head.castShadow = true;
+            player.add(head);
+
+            // Aura Shield Mesh
+            const auraGeo = new THREE.SphereGeometry(1.5, 24, 24);
+            const auraMat = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true, transparent: true, opacity: 0.5 });
+            player.auraShieldMesh = new THREE.Mesh(auraGeo, auraMat);
+            player.auraShieldMesh.position.y = 1.2;
+            player.auraShieldMesh.visible = false;
+            player.add(player.auraShieldMesh);
+
+            // Hoverboard Mesh
+            const boardGeo = new THREE.BoxGeometry(1.4, 0.1, 2.5);
+            const boardMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.5 });
+            player.hoverboardMesh = new THREE.Mesh(boardGeo, boardMat);
+            player.hoverboardMesh.position.y = -0.1;
+            player.hoverboardMesh.visible = false;
+            player.add(player.hoverboardMesh);
+
+            scene.add(player);
+        }
+
+        function buildChaserGroup() {
+            chaser = new THREE.Group();
+
+            // Fatty Oversized Body
+            const bodyGeo = new THREE.SphereGeometry(1.2, 24, 24);
+            bodyGeo.scale(1.2, 1.0, 1.2);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd02020, roughness: 0.6 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.2;
+            body.castShadow = true;
+            chaser.add(body);
+
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.65, 24, 24);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc99, roughness: 0.8 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.4;
+            head.castShadow = true;
+            chaser.add(head);
+
+            // Giant Burger
+            const burgerGroup = new THREE.Group();
+            const bunGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.2, 16);
+            const bunMat = new THREE.MeshStandardMaterial({ color: 0xd88d28 });
+            const bun = new THREE.Mesh(bunGeo, bunMat);
+
+            const pattyGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.15, 16);
+            const pattyMat = new THREE.MeshStandardMaterial({ color: 0x441100, emissive: 0xff2200, emissiveIntensity: 0.3 });
+            const patty = new THREE.Mesh(pattyGeo, pattyMat);
+            patty.position.y = -0.15;
+
+            burgerGroup.add(bun);
+            burgerGroup.add(patty);
+            burgerGroup.position.set(0.9, 1.5, 0.8);
+            chaser.add(burgerGroup);
+
+            scene.add(chaser);
+        }
+
+        /* --- ENVIRONMENT GENERATION --- */
+        function createTrackSegment(zPosition) {
+            const segment = new THREE.Group();
+            segment.position.z = zPosition;
+
+            // Obsidian Road Floor with Wet Reflection Look
+            const roadGeo = new THREE.BoxGeometry(12, 0.2, 30);
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0x08080c, roughness: 0.05, metalness: 0.95 });
+            const road = new THREE.Mesh(roadGeo, roadMat);
+            road.position.y = -0.1;
+            road.receiveShadow = true;
+            segment.add(road);
+
+            // Gold Lane Lines
+            for (let lane = -1; lane <= 1; lane++) {
+                const lineGeo = new THREE.BoxGeometry(0.15, 0.05, 30);
+                const lineMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+                const line = new THREE.Mesh(lineGeo, lineMat);
+                line.position.set(lane * laneWidth, 0.02, 0);
+                segment.add(line);
+            }
+
+            // Side Skyscrapers with Glowing Gold Windows
+            createBuildingsForSegment(segment);
+
+            // Overhead Billboards
+            if (Math.random() > 0.45) {
+                createOverheadBillboard(segment);
+            }
+
+            scene.add(segment);
+            trackSegments.push(segment);
+
+            if (zPosition < -30) {
+                spawnSegmentContents(zPosition);
+            }
+        }
+
+        function createBuildingsForSegment(segment) {
+            [-10, 10].forEach(xOffset => {
+                const height = 28 + Math.random() * 32;
+                const bGeo = new THREE.BoxGeometry(8, height, 25);
+                const bMat = new THREE.MeshStandardMaterial({ color: 0x040406, roughness: 0.2, metalness: 0.9 });
+                const building = new THREE.Mesh(bGeo, bMat);
+                building.position.set(xOffset * 1.8, height / 2, 0);
+
+                const windowGeo = new THREE.BoxGeometry(8.2, height * 0.85, 24);
+                const windowMat = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true });
+                const windowMesh = new THREE.Mesh(windowGeo, windowMat);
+                building.add(windowMesh);
+
+                segment.add(building);
+            });
+        }
+
+        function createOverheadBillboard(segment) {
+            const frameGeo = new THREE.BoxGeometry(14, 4, 0.5);
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
+            const billboard = new THREE.Mesh(frameGeo, frameMat);
+            billboard.position.set(0, 8, Math.random() * 10 - 5);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, 256, 128);
+            ctx.fillStyle = '#FFD700';
+            ctx.font = '900 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("DIET UMAR SAMI!", 128, 45);
+            ctx.fillStyle = '#FF4444';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText("🍔 NO MORE BURGERS! 🍔", 128, 85);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const screenGeo = new THREE.PlaneGeometry(13.5, 3.5);
+            const screenMat = new THREE.MeshBasicMaterial({ map: texture });
+            const screen = new THREE.Mesh(screenGeo, screenMat);
+            screen.position.z = 0.28;
+            billboard.add(screen);
+
+            segment.add(billboard);
+        }
+
+        function createRain() {
+            const particleCount = 700;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 40;
+                positions[i + 1] = Math.random() * 30;
+                positions[i + 2] = (Math.random() - 0.5) * 80;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const material = new THREE.PointsMaterial({
+                color: 0xffd700,
+                size: 0.15,
+                transparent: true,
+                opacity: 0.65
+            });
+
+            rainParticles = new THREE.Points(geometry, material);
+            scene.add(rainParticles);
+        }
+
+        /* --- OBSTACLES & POWERUPS SPAWNING --- */
+        function spawnSegmentContents(zPosition) {
+            const lanes = [-1, 0, 1];
+            const laneForObstacle = lanes[Math.floor(Math.random() * lanes.length)];
+            const isHighBarrier = Math.random() > 0.5;
+
+            const obsGroup = new THREE.Group();
+            obsGroup.position.set(laneForObstacle * laneWidth, 0, zPosition);
+
+            if (isHighBarrier) {
+                const barGeo = new THREE.BoxGeometry(3, 1, 0.4);
+                const barMat = new THREE.MeshStandardMaterial({ color: 0xff3333, emissive: 0xaa0000 });
+                const bar = new THREE.Mesh(barGeo, barMat);
+                bar.position.y = 2.2;
+                obsGroup.add(bar);
+                obsGroup.isHigh = true;
+            } else {
+                const barGeo = new THREE.BoxGeometry(3, 1.2, 0.4);
+                const barMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8 });
+                const bar = new THREE.Mesh(barGeo, barMat);
+                bar.position.y = 0.6;
+                obsGroup.add(bar);
+                obsGroup.isHigh = false;
+            }
+
+            scene.add(obsGroup);
+            obstacles.push(obsGroup);
+
+            // Spawn Gold Coins
+            lanes.forEach(lane => {
+                if (lane !== laneForObstacle && Math.random() > 0.35) {
+                    for (let c = 0; c < 3; c++) {
+                        const coinGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16);
+                        coinGeo.rotateX(Math.PI / 2);
+                        const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 1.0, roughness: 0.1 });
+                        const coin = new THREE.Mesh(coinGeo, coinMat);
+                        coin.position.set(lane * laneWidth, 1.0, zPosition + (c * 2.5));
+                        scene.add(coin);
+                        coins.push(coin);
+                    }
+                }
+            });
+
+            // Spawn Powerups
+            if (Math.random() < 0.3) {
+                const pLane = lanes[Math.floor(Math.random() * lanes.length)];
+                const types = ['magnet', 'jetpack', 'shield', 'hoverboard'];
+                const pType = types[Math.floor(Math.random() * types.length)];
+
+                const pGeo = new THREE.OctahedronGeometry(0.6);
+                const pMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00aaaa });
+                const powerup = new THREE.Mesh(pGeo, pMat);
+                powerup.position.set(pLane * laneWidth, 1.2, zPosition - 5);
+                powerup.type = pType;
+
+                scene.add(powerup);
+                powerups.push(powerup);
+            }
+        }
+
+        /* --- CONTROLS --- */
+        function setupControls() {
+            window.addEventListener('keydown', (e) => {
+                if (!isPlaying) return;
+                if (e.key === 'ArrowLeft' || e.key === 'a') moveLane(-1);
+                if (e.key === 'ArrowRight' || e.key === 'd') moveLane(1);
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') jump();
+                if (e.key === 'ArrowDown' || e.key === 's') slide();
+            });
+
+            document.getElementById('btn-left').addEventListener('click', () => moveLane(-1));
+            document.getElementById('btn-right').addEventListener('click', () => moveLane(1));
+            document.getElementById('btn-up').addEventListener('click', jump);
+            document.getElementById('btn-down').addEventListener('click', slide);
+
+            let startX = 0, startY = 0;
+            window.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
+
+            window.addEventListener('touchend', (e) => {
+                if (!isPlaying) return;
+                const diffX = e.changedTouches[0].clientX - startX;
+                const diffY = e.changedTouches[0].clientY - startY;
+
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    if (diffX > 30) moveLane(1);
+                    else if (diffX < -30) moveLane(-1);
+                } else {
+                    if (diffY < -30) jump();
+                    else if (diffY > 30) slide();
+                }
+            });
+        }
+
+        function moveLane(dir) {
+            currentLane = Math.max(-1, Math.min(1, currentLane + dir));
+        }
+
+        function jump() {
+            if (!isJumping && !jetpackActive) {
+                isJumping = true;
+                playerVelocityY = 0.28;
+                sound.playJump();
+            }
+        }
+
+        function slide() {
+            if (!isSliding && !jetpackActive) {
+                isSliding = true;
+                slideTimer = 25;
+                player.scale.y = 0.5;
+            }
+        }
+
+        /* --- GAME LOOP --- */
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isPlaying) {
+                updateGameLogic();
+            }
+
+            // Animate Rain
+            if (rainParticles) {
+                const pos = rainParticles.geometry.attributes.position.array;
+                for (let i = 1; i < pos.length; i += 3) {
+                    pos[i] -= 0.8;
+                    if (pos[i] < 0) pos[i] = 30;
+                }
+                rainParticles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function updateGameLogic() {
+            distanceRun += gameSpeed;
+            score = Math.floor(distanceRun * 10);
+            document.getElementById('score-text').innerText = score.toString().padStart(5, '0');
+
+            // 1. RECURRING 5-SECOND BEAT & CHANT TRIGGER
+            beatTimer += 0.016;
+            if (beatTimer >= BEAT_INTERVAL) {
+                triggerBeatDrop();
+                beatTimer = 0;
+            }
+
+            // 2. Player Motion
+            const targetX = currentLane * laneWidth;
+            player.position.x += (targetX - player.position.x) * 0.2;
+
+            if (isJumping) {
+                playerY += playerVelocityY;
+                playerVelocityY -= 0.015;
+                if (playerY <= 0) {
+                    playerY = 0;
+                    isJumping = false;
+                }
+            }
+
+            if (isSliding) {
+                slideTimer--;
+                if (slideTimer <= 0) {
+                    isSliding = false;
+                    player.scale.y = 1.0;
+                }
+            }
+
+            player.position.y = jetpackActive ? 4.5 : playerY;
+
+            // 3. Chaser Logic
+            chaserDistance += (targetChaserDistance - chaserDistance) * 0.05;
+            chaser.position.x = player.position.x;
+            chaser.position.z = player.position.z + chaserDistance;
+            chaser.position.y = player.position.y;
+
+            if (chaserDistance <= 1.2) {
+                triggerGameOver();
+            }
+
+            // 4. Move Track
+            trackSegments.forEach(segment => {
+                segment.position.z += gameSpeed;
+                if (segment.position.z > 20) {
+                    segment.position.z -= 300;
+                }
+            });
+
+            // Obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.position.z += gameSpeed;
+
+                if (Math.abs(obs.position.z - player.position.z) < 1.0 && Math.abs(obs.position.x - player.position.x) < 1.2) {
+                    const hitLow = !obs.isHigh && playerY < 1.0;
+                    const hitHigh = obs.isHigh && !isSliding;
+
+                    if (hitLow || hitHigh) {
+                        if (auraShieldActive || hoverboardActive) {
+                            auraShieldActive = false;
+                            hoverboardActive = false;
+                            player.auraShieldMesh.visible = false;
+                            player.hoverboardMesh.visible = false;
+                            sound.playCrash();
+                            scene.remove(obs);
+                            obstacles.splice(i, 1);
+                        } else {
+                            sound.playCrash();
+                            targetChaserDistance = 1.0;
+                        }
+                    }
+                }
+
+                if (obs.position.z > 15) {
+                    scene.remove(obs);
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Coins
+            for (let i = coins.length - 1; i >= 0; i--) {
+                const coin = coins[i];
+                coin.position.z += gameSpeed;
+                coin.rotation.z += 0.05;
+
+                if (magnetActive && coin.position.z > -15) {
+                    coin.position.x += (player.position.x - coin.position.x) * 0.2;
+                    coin.position.y += (player.position.y + 1 - coin.position.y) * 0.2;
+                }
+
+                if (Math.abs(coin.position.z - player.position.z) < 1.2 && Math.abs(coin.position.x - player.position.x) < 1.2) {
+                    coinCount++;
+                    document.getElementById('coins-text').innerText = coinCount;
+                    sound.playCoin();
+                    scene.remove(coin);
+                    coins.splice(i, 1);
+                } else if (coin.position.z > 15) {
+                    scene.remove(coin);
+                    coins.splice(i, 1);
+                }
+            }
+
+            // Powerups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const p = powerups[i];
+                p.position.z += gameSpeed;
+                p.rotation.y += 0.04;
+
+                if (Math.abs(p.position.z - player.position.z) < 1.2 && Math.abs(p.position.x - player.position.x) < 1.2) {
+                    activatePowerup(p.type);
+                    scene.remove(p);
+                    powerups.splice(i, 1);
+                } else if (p.position.z > 15) {
+                    scene.remove(p);
+                    powerups.splice(i, 1);
+                }
+            }
+
+            if (powerupTimer > 0) {
+                powerupTimer -= 0.016;
+                document.getElementById('powerup-timer').innerText = Math.ceil(powerupTimer) + 's';
+                if (powerupTimer <= 0) {
+                    deactivatePowerups();
+                }
+            }
+        }
+
+        /* --- 5-SECOND BEAT & SOUND DROP TRIGGER --- */
+        function triggerBeatDrop() {
+            // 1. Synthesized Heavy Beat Drop
+            sound.playBeatDrop();
+
+            // 2. Loud Vocal Speech Chant
+            sound.speak("Umar samiyooool", 1.2, 1.2);
+
+            // 3. Screen Flash
+            const flash = document.getElementById('flash-overlay');
+            flash.classList.remove('flash-active');
+            void flash.offsetWidth;
+            flash.classList.add('flash-active');
+
+            // 4. Lightning Light Flash
+            lightningLight.intensity = 5;
+            setTimeout(() => { lightningLight.intensity = 0; }, 120);
+
+            // 5. Floating Neon 3D Banner
+            const banner = document.getElementById('chant-banner');
+            banner.classList.remove('hidden');
+            banner.classList.remove('chant-banner-anim');
+            void banner.offsetWidth;
+            banner.classList.add('chant-banner-anim');
+
+            setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 1300);
+
+            // Camera Shake
+            camera.position.y += 0.7;
+            setTimeout(() => { camera.position.y = 5; }, 120);
+        }
+
+        /* --- POWER-UPS --- */
+        function activatePowerup(type) {
+            deactivatePowerups();
+            powerupTimer = 6.0;
+
+            const badge = document.getElementById('powerup-badge');
+            const pName = document.getElementById('powerup-name');
+            const pIcon = document.getElementById('powerup-icon');
+            badge.classList.remove('hidden');
+
+            if (type === 'magnet') {
+                magnetActive = true;
+                pName.innerText = "COIN MAGNET";
+                pIcon.className = "fa-solid fa-magnet text-yellow-400 text-2xl";
+            } else if (type === 'jetpack') {
+                jetpackActive = true;
+                pName.innerText = "JETPACK";
+                pIcon.className = "fa-solid fa-rocket text-yellow-400 text-2xl";
+                targetChaserDistance = 14.0;
+            } else if (type === 'shield') {
+                auraShieldActive = true;
+                player.auraShieldMesh.visible = true;
+                pName.innerText = "AURA SHIELD";
+                pIcon.className = "fa-solid fa-shield-halved text-yellow-400 text-2xl";
+            } else if (type === 'hoverboard') {
+                hoverboardActive = true;
+                player.hoverboardMesh.visible = true;
+                pName.innerText = "HOVERBOARD";
+                pIcon.className = "fa-solid fa-skateboard text-yellow-400 text-2xl";
+            }
+        }
+
+        function deactivatePowerups() {
+            magnetActive = false;
+            jetpackActive = false;
+            auraShieldActive = false;
+            hoverboardActive = false;
+            player.auraShieldMesh.visible = false;
+            player.hoverboardMesh.visible = false;
+            document.getElementById('powerup-badge').classList.add('hidden');
+            targetChaserDistance = 8.0;
+        }
+
+        /* --- GAME STATES --- */
+        function startGame() {
+            sound.init();
+            sound.speak("Umar samiuuuuuuuuul", 1.0, 1.0);
+
+            distanceRun = 0;
+            score = 0;
+            coinCount = 0;
+            gameSpeed = 0.58;
+            currentLane = 0;
+            targetChaserDistance = 8.0;
+            chaserDistance = 8.0;
+            beatTimer = 0;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('hud-panel').classList.remove('hidden');
+            document.getElementById('touch-controls').classList.remove('hidden');
+
+            isPlaying = true;
+        }
+
+        function triggerGameOver() {
+            isPlaying = false;
+            sound.playCrash();
+            sound.speak("Ohh no Umar Sami", 0.9, 1.0);
+
+            document.getElementById('hud-panel').classList.add('hidden');
+            document.getElementById('touch-controls').classList.add('hidden');
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-coins').innerText = coinCount;
+
+            document.getElementById('gameover-screen').classList.remove('hidden');
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Button Listeners
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        window.onload = () => {
+            init3D();
+            animate();
+        };
+    </script>
+</body>
+</html>
